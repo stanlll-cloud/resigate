@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ResiGate · 住宅 IP 精准分流生成器</title>
+<meta name="description" content="填入静态住宅代理，一键生成 Clash Party / Clash Verge Rev / FlClash / Shadowrocket / Surge / Loon / Sing-box 配置，让 Claude、ChatGPT、Gemini 与支付风控固定走住宅 IP。">
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --text: #14171f; --muted: #5f6672; --faint: #8c93a0; --line: #e4e7ec;
+    --accent: #2563eb; --accent-ink: #ffffff; --accent-soft: #eff4ff; --accent-line: #bfdbfe;
+    --ok: #15803d; --ok-soft: #ecfdf3; --warn: #b45309; --warn-soft: #fffbeb; --warn-line: #fde68a;
+    --err: #b91c1c; --err-soft: #fef2f2; --code: #f8fafc;
+    --shadow: 0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b0d12; --card: #13161d; --text: #e6e9ef; --muted: #98a0ad; --faint: #6c7380; --line: #232834;
+      --accent: #60a5fa; --accent-ink: #0b0d12; --accent-soft: #17253d; --accent-line: #253b61;
+      --ok: #4ade80; --ok-soft: #0f291a; --warn: #fbbf24; --warn-soft: #271f0e; --warn-line: #473712;
+      --err: #f87171; --err-soft: #2b1414; --code: #0e1117; --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.68 -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  main { max-width: 840px; margin: 0 auto; padding: 0 16px 80px; }
+  a { color: var(--accent); }
+  code, pre, input, textarea { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; font-size: 13px; word-break: break-all; }
+  pre { background: var(--code); border: 1px solid var(--line); padding: 12px 14px; border-radius: 10px; overflow: auto;
+    max-height: 280px; font-size: 12px; line-height: 1.55; margin: 8px 0 0; }
+  .hidden { display: none !important; }
+  .muted { color: var(--muted); font-size: 13.5px; }
+
+  header { padding: 36px 0 8px; }
+  .brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--muted); font-size: 14px; }
+  .brand i { font-style: normal; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px;
+    background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 800; }
+  h1 { font-size: 28px; line-height: 1.3; margin: 14px 0 8px; letter-spacing: -.3px; }
+  .lead { color: var(--muted); margin: 0; font-size: 15.5px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+  .badge { font-size: 12.5px; color: var(--muted); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; }
+  .promo { display: flex; align-items: center; gap: 12px; margin: 18px 0 0; padding: 12px 16px; border-radius: 12px;
+    background: var(--card); border: 1px dashed var(--accent-line); color: var(--text); text-decoration: none; }
+  .promo:hover { border-style: solid; }
+  .promo b { color: var(--accent); }
+  .promo .arrow { margin-left: auto; color: var(--accent); font-weight: 700; }
+
+  .stepper { position: sticky; top: 0; z-index: 5; margin: 22px -16px 0; padding: 10px 16px;
+    background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .stepper ol { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 0; padding: 0; }
+  .stepper a { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--muted); font-size: 13.5px;
+    padding: 6px 4px; border-top: 3px solid var(--line); white-space: nowrap; overflow: hidden; }
+  .stepper a .n { flex: none; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+    font-size: 12px; font-weight: 700; background: var(--line); color: var(--muted); }
+  .stepper a.done { border-top-color: var(--ok); color: var(--text); }
+  .stepper a.done .n { background: var(--ok); color: #fff; }
+  .stepper a.done .n::after { content: "✓"; }
+  .stepper a.done .n span { display: none; }
+  @media (max-width: 560px) { .stepper a .t { display: none; } .stepper a { justify-content: center; } }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 24px; margin: 16px 0; box-shadow: var(--shadow); scroll-margin-top: 64px; }
+  @media (max-width: 560px) { .card { padding: 18px 16px; border-radius: 14px; } }
+  .card > h2 { display: flex; align-items: center; gap: 10px; font-size: 18.5px; margin: 0 0 4px; }
+  .card > h2 .n { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; flex: none;
+    background: var(--accent-soft); color: var(--accent); font-size: 14px; font-weight: 800; }
+  .card > .desc { color: var(--muted); margin: 0 0 16px; font-size: 14px; }
+
+  label.f { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin: 12px 0 6px; }
+  input[type=text], textarea { width: 100%; padding: 10px 13px; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--bg); color: var(--text); font-size: 14px; transition: border-color .15s, box-shadow .15s; }
+  input[type=text]:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+
+  .seg { display: inline-flex; padding: 3px; gap: 3px; background: var(--bg); border: 1px solid var(--line); border-radius: 11px; flex-wrap: wrap; }
+  .seg button, .seg label { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13.5px; font-weight: 600;
+    padding: 7px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg button[aria-pressed="true"], .seg label:has(input:checked) { background: var(--card); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .seg.big { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+  @media (min-width: 680px) { .seg.big { grid-template-columns: repeat(6, 1fr); } }
+  .seg.big button { justify-content: center; padding: 10px 6px; flex-direction: column; gap: 2px; font-size: 12.5px; }
+  .seg.big button .ic { font-size: 18px; line-height: 1.2; }
+
+  .protoRow { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; margin-top: 12px; }
+  .parsed { margin-top: 12px; padding: 10px 14px; border-radius: 10px; font-size: 13.5px; }
+  .parsed.ok { background: var(--ok-soft); color: var(--ok); }
+  .parsed.warn { background: var(--warn-soft); color: var(--warn); }
+  .parsed.bad { background: var(--err-soft); color: var(--err); }
+
+  .groups { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  @media (max-width: 560px) { .groups { grid-template-columns: 1fr; } }
+  .grp { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--line);
+    border-radius: 10px; background: var(--bg); cursor: pointer; }
+  .grp:has(input:checked) { border-color: var(--accent-line); background: var(--accent-soft); }
+  .grp input { margin-top: 3px; accent-color: var(--accent); flex: none; }
+  .grp b { display: block; font-size: 14px; }
+  .grp small { display: block; font-size: 12px; color: var(--muted); line-height: 1.4; margin-top: 2px; }
+  .tag { font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 5px; margin-left: 6px; background: var(--line); color: var(--muted); }
+  .tag.warn { background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn-line); }
+
+  .switchRow { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; }
+  .chk { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; cursor: pointer; }
+  .chk input { accent-color: var(--accent); }
+
+  .btnRow { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
+  .btn { border: 0; border-radius: 10px; padding: 9px 16px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+    background: var(--accent); color: var(--accent-ink); display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { filter: brightness(1.06); }
+  .btn.sub { background: var(--bg); color: var(--text); border: 1px solid var(--line); }
+  .btn.ok { background: var(--ok); color: #fff; }
+  .btn[disabled] { opacity: .45; cursor: not-allowed; filter: none; }
+
+  .out-box { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .qr-wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 12px 0; }
+  #qrcode { padding: 10px; background: #fff; border-radius: 10px; border: 1px solid var(--line); display: inline-block; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip { font-size: 12px; padding: 2px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+  details.more { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); }
+  details.more > summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 13.5px; }
+  footer { text-align: center; color: var(--faint); font-size: 13px; margin-top: 32px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand"><i>RG</i> ResiGate</div>
+    <h1>让 AI 与风控网站固定走你的静态住宅 IP</h1>
+    <p class="lead">日常流量照常走高速机场，仅将 Claude、ChatGPT、Gemini、Stripe 与验证码精确分流到住宅出口；全流程本地浏览器生成，不上传任何账密。</p>
+    <div class="badges">
+      <span class="badge">纯本地生成 · 零后端</span>
+      <span class="badge">防烧住宅流量</span>
+      <span class="badge">Clash / 小火箭 / Surge / Loon / Sing-box</span>
+    </div>
+    <div id="promoGrid" class="hidden" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:18px"></div>
+  </header>
+
+  <nav class="stepper" aria-label="配置进度">
+    <ol>
+      <li><a id="st1" href="#step1"><span class="n"><span>1</span></span><span class="t">填住宅代理</span></a></li>
+      <li><a id="st2" href="#step2"><span class="n"><span>2</span></span><span class="t">选分流场景</span></a></li>
+      <li><a id="st3" href="#step3"><span class="n"><span>3</span></span><span class="t">生成配置</span></a></li>
+      <li><a id="st4" href="#step4"><span class="n"><span>4</span></span><span class="t">验证 IP</span></a></li>
+    </ol>
+  </nav>
+
+  <section class="card" id="step1">
+    <h2><span class="n">1</span> 填入静态住宅代理信息</h2>
+    <p class="desc">支持直接粘贴整串代理（如 <code>host:port:user:pass</code>、<code>user:pass@host:port</code> 或 <code>http://...</code>），会自动拆解。</p>
+    <label class="f" for="pasteBox">快捷粘贴（可选）</label>
+    <input type="text" id="pasteBox" placeholder="粘贴 host:port:user:pass 或 socks5://user:pass@host:port">
+    <div class="grid">
+      <div><label class="f" for="host">服务器地址 (Host / IP)</label><input type="text" id="host" placeholder="例如 p.webshare.io 或 50.2.71.50"></div>
+      <div><label class="f" for="port">端口 (Port)</label><input type="text" id="port" placeholder="例如 80 或 1080"></div>
+      <div><label class="f" for="user">用户名 (Username)</label><input type="text" id="user" placeholder="代理用户名"></div>
+      <div><label class="f" for="pass">密码 (Password)</label><input type="text" id="pass" placeholder="代理密码"></div>
+    </div>
+    <div class="protoRow">
+      <span class="muted" style="font-weight:600">代理协议：</span>
+      <div class="seg">
+        <label><input type="radio" name="proto" value="http" checked> HTTP</label>
+        <label><input type="radio" name="proto" value="socks5"> SOCKS5</label>
+      </div>
+    </div>
+    <details class="more">
+      <summary>高级选项（自定义跳板 / UDP / IPv6 防 502）</summary>
+      <label class="f" for="relayInput">前置跳板节点或策略组（仅 Clash / Sing-box 有效）</label>
+      <input type="text" id="relayInput" placeholder="留空 = 自动跟随主选择组；填 DIRECT = 直连；或填组名如 🇺🇸 美国节点">
+      <div class="switchRow">
+        <label class="chk"><input type="checkbox" id="udpOpt" checked> 开启 UDP 转发（若住宅代理不支持可取消）</label>
+        <label class="chk"><input type="checkbox" id="ipv6BlockOpt" checked> 拦截 Anthropic IPv6（防止 Claude 报 502）</label>
+      </div>
+    </details>
+    <div id="parsed" class="parsed warn"><span id="status">请填写完整的住宅代理地址、端口、用户名和密码。</span></div>
+  </section>
+
+  <section class="card" id="step2">
+    <h2><span class="n">2</span> 选择需要走住宅 IP 的场景</h2>
+    <p class="desc">默认仅勾选高频 AI 与支付风控域名，避开 Google Drive / Play 等大流量下载，帮你省下住宅流量。</p>
+    <div id="selSummary" class="chips"></div>
+    <div id="groups" class="groups"></div>
+    <details class="more">
+      <summary>自定义补充域名或规则（可选）</summary>
+      <label class="f" for="custom">每行一条，支持裸域名（如 <code>midjourney.com</code>）或标准规则（如 <code>DOMAIN-KEYWORD,cursor</code>）</label>
+      <textarea id="custom" rows="3" placeholder="example.com&#10;DOMAIN-KEYWORD,cursor"></textarea>
+    </details>
+  </section>
+
+  <section class="card" id="step3">
+    <h2><span class="n">3</span> 选择客户端并导出配置</h2>
+    <p class="desc">选好你的设备客户端，直接「复制」或「下载文件」导入即可。</p>
+    <div class="seg big" id="clientTabs">
+      <button type="button" data-c="clash_party" aria-pressed="true"><span class="ic">💻</span>Clash Party</button>
+      <button type="button" data-c="clash_verge" aria-pressed="false"><span class="ic">🖥️</span>Clash Verge</button>
+      <button type="button" data-c="flclash" aria-pressed="false"><span class="ic">📱</span>FlClash</button>
+      <button type="button" data-c="shadowrocket" aria-pressed="false"><span class="ic">🚀</span>小火箭</button>
+      <button type="button" data-c="surge_loon" aria-pressed="false"><span class="ic">⚡</span>Surge/Loon</button>
+      <button type="button" data-c="singbox" aria-pressed="false"><span class="ic">📦</span>Sing-box</button>
+    </div>
+
+    <div id="outputArea" class="out-box">
+      <p class="muted" id="clientGuide"></p>
+      <div id="qrSection" class="qr-wrap hidden">
+        <div id="qrcode"></div>
+        <div>
+          <div style="font-weight:600;margin-bottom:6px">小火箭节点导入</div>
+          <p class="muted" style="margin:0 0 8px">用 iPhone 小火箭扫码添加 <code>🏠住宅出口-勿选</code> 节点，随后配置前置代理并导入下方分流模块。</p>
+          <button type="button" class="btn sub" id="copyUriBtn">复制节点链接</button>
+        </div>
+      </div>
+      <div id="subTabs" class="seg hidden" style="margin-bottom:8px">
+        <button type="button" data-sub="surge" aria-pressed="true">Surge 模块 (.sgmodule)</button>
+        <button type="button" data-sub="loon" aria-pressed="false">Loon 插件 (.plugin)</button>
+      </div>
+      <div class="btnRow">
+        <button type="button" class="btn" id="copyBtn" disabled>📋 复制配置</button>
+        <button type="button" class="btn sub" id="downloadBtn" disabled>⬇️ 下载配置文件</button>
+      </div>
+      <pre id="codeOut">请先在第一步填写完整的住宅代理信息。</pre>
+    </div>
+  </section>
+
+  <section class="card" id="step4">
+    <h2><span class="n">4</span> 验证出口 IP 是否生效</h2>
+    <p class="desc">配置生效后，访问检测网站核对显示的 IP 是否与你购买的静态住宅 IP 一致。</p>
+    <p>1. 浏览器访问 <a href="https://ipv4.webshare.io/" target="_blank" rel="noopener">ipv4.webshare.io</a> 或 <a href="https://ipinfo.io/json" target="_blank" rel="noopener">ipinfo.io/json</a>，确认显示的 IP 与归属地无误。</p>
+    <p>2. 终端 / Claude Code 用户需开启客户端 <strong>TUN 模式</strong>，或在终端设置代理变量（如 <code>export HTTPS_PROXY=http://127.0.0.1:7890</code>）后运行：</p>
+    <pre>curl -s https://ipv4.webshare.io/</pre>
+  </section>
+
+  <footer>ResiGate · MIT License · 所有配置均在本地浏览器生成</footer>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// ========== 推广位配置 ==========
+const PROMO_ITEMS = [
+  {
+    icon: "🏠",
+    title: "独立静态住宅 IP（IPdodo）",
+    desc: "纯净原生独享住宅 IP，注册即用，搭配本工具低风控稳跑 Claude / Stripe",
+    url: "https://account.ipdodo.com/account/register?invite_code=M9I3KRBI",
+  },
+  {
+    icon: "🚀",
+    title: "前置跳板梯子（搬瓦工官方 Just My Socks）",
+    desc: "CN2 GIA 优质直连线路，作为住宅 IP 前置加密跳板稳如磐石",
+    url: "https://justmysocks.net/members/aff.php?aff=39372",
+  },
+];
+// =================================
+
+const $ = (id) => document.getElementById(id);
+let RULES_DATA = null;
+let CLASH_TPL = "";
+let curClient = "clash_party";
+let curSub = "surge";
+let qrInstance = null;
+let copiedOnce = false;
+
+if (PROMO_ITEMS.length) {
+  const grid = $("promoGrid");
+  grid.classList.remove("hidden");
+  grid.innerHTML = PROMO_ITEMS.map((item) => `
+    <a class="promo" style="margin:0" href="${item.url}" target="_blank" rel="noopener">
+      <span>${item.icon}</span>
+      <div><b>${item.title}</b><div class="muted">${item.desc}</div></div>
+      <span class="arrow">→</span>
+    </a>`).join("");
+}
+
+Promise.all([
+  fetch("rules.json", { cache: "no-store" }).then((r) => { if (!r.ok) throw r.status; return r.json(); }),
+  fetch("templates/clash.js", { cache: "no-store" }).then((r) => { if (!r.ok) throw r.status; return r.text(); }),
+]).then(([rulesJson, clashJs]) => {
+  RULES_DATA = rulesJson;
+  CLASH_TPL = clashJs;
+  initGroups();
+  render();
+}).catch(() => {
+  setStatus("bad", "加载 rules.json 或模板失败：请通过 HTTP 服务（如 GitHub Pages 或本地 python3 -m http.server）打开本页。");
+});
+
+function initGroups() {
+  $("groups").innerHTML = RULES_DATA.groups.map((g) => {
+    const tag = g.tag ? `<span class="tag warn">${g.tag}</span>` : (g.on ? "" : '<span class="tag">可选</span>');
+    return `<label class="grp"><input type="checkbox" data-g="${g.id}" ${g.on ? "checked" : ""}>
+      <span><b>${g.name}${tag}</b><small>${g.desc}</small></span></label>`;
+  }).join("");
+  document.querySelectorAll("[data-g]").forEach((el) => el.addEventListener("change", render));
+}
+
+// 快捷粘贴解析：支持 host:port:user:pass、user:pass@host:port、http(s)://...、socks5://...
+$("pasteBox").addEventListener("input", (e) => {
+  const raw = e.target.value.trim();
+  if (!raw) return;
+  let s = raw;
+  if (/^socks5?:\/\//i.test(s)) {
+    document.querySelector('[name=proto][value="socks5"]').checked = true;
+    s = s.replace(/^socks5?:\/\//i, "");
+  } else if (/^https?:\/\//i.test(s)) {
+    document.querySelector('[name=proto][value="http"]').checked = true;
+    s = s.replace(/^https?:\/\//i, "");
+  }
+  if (s.includes("@")) {
+    const [cred, hp] = s.split("@");
+    const [u, ...p] = cred.split(":");
+    const [h, port] = hp.split(":");
+    if (h && port && u && p.length) {
+      $("host").value = h; $("port").value = port; $("user").value = u; $("pass").value = p.join(":");
+    }
+  } else {
+    const parts = s.split(":");
+    if (parts.length >= 4) {
+      $("host").value = parts[0]; $("port").value = parts[1]; $("user").value = parts[2]; $("pass").value = parts.slice(3).join(":");
+    }
+  }
+  render();
+});
+
+for (const k of ["host", "port", "user", "pass", "relayInput", "custom"]) $(k).addEventListener("input", render);
+for (const k of ["udpOpt", "ipv6BlockOpt"]) $(k).addEventListener("change", render);
+document.querySelectorAll("[name=proto]").forEach((r) => r.addEventListener("change", render));
+
+document.querySelectorAll("#clientTabs button").forEach((btn) => btn.addEventListener("click", () => {
+  document.querySelectorAll("#clientTabs button").forEach((b) => b.setAttribute("aria-pressed", "false"));
+  btn.setAttribute("aria-pressed", "true");
+  curClient = btn.dataset.c;
+  render();
+}));
+
+document.querySelectorAll("#subTabs button").forEach((btn) => btn.addEventListener("click", () => {
+  document.querySelectorAll("#subTabs button").forEach((b) => b.setAttribute("aria-pressed", "false"));
+  btn.setAttribute("aria-pressed", "true");
+  curSub = btn.dataset.sub;
+  render();
+}));
+
+const yq = (s) => JSON.stringify(s);
+const RULE_TYPES = /^(DOMAIN|DOMAIN-SUFFIX|DOMAIN-KEYWORD|IP-CIDR|IP-CIDR6|IP-ASN|PROCESS-NAME|GEOIP|GEOSITE)$/i;
+
+function readForm() {
+  const proto = document.querySelector("[name=proto]:checked").value;
+  const host = $("host").value.trim(), port = $("port").value.trim();
+  const user = $("user").value.trim(), pass = $("pass").value.trim();
+  if (!host || !user || !pass || !/^\d+$/.test(port) || +port < 1 || +port > 65535) return null;
+  return {
+    proto, host, port: +port, user, pass,
+    relay: $("relayInput").value.trim(),
+    udp: $("udpOpt").checked,
+    blockIpv6: $("ipv6BlockOpt").checked,
+  };
+}
+
+function collectSelection() {
+  if (!RULES_DATA) return { common: [], android: [], ipv6: [], bad: [], rawCustom: [] };
+  const EXIT = RULES_DATA.exitName;
+  const on = new Set([...document.querySelectorAll("[data-g]:checked")].map((c) => c.dataset.g));
+  const common = [], android = [], ipv6 = [], bad = [];
+  for (const g of RULES_DATA.groups) {
+    if (!on.has(g.id)) continue;
+    if ($("ipv6BlockOpt").checked && g.ipv6Block) {
+      g.ipv6Block.forEach((c) => ipv6.push(`IP-CIDR6,${c},REJECT,no-resolve`));
+    }
+    (g.rules || []).forEach((r) => {
+      if (r.startsWith("S:")) common.push(`DOMAIN-SUFFIX,${r.slice(2)},${EXIT}`);
+      else if (r.startsWith("K:")) common.push(`DOMAIN-KEYWORD,${r.slice(2)},${EXIT}`);
+      else common.push(r.replace("@", EXIT));
+    });
+    (g.android || []).forEach((p) => android.push(`PROCESS-NAME,${p},${EXIT}`));
+  }
+  for (let line of $("custom").value.split(/\n/)) {
+    line = line.trim().replace(/^https?:\/\//i, "").replace(/^\*\./, "").replace(/[\/\s].*$/, "");
+    if (!line || line.startsWith("#")) continue;
+    if (line.includes(",")) {
+      const p = line.split(",").map((x) => x.trim());
+      if (!RULE_TYPES.test(p[0]) || !p[1]) { bad.push(line); continue; }
+      const r = [p[0].toUpperCase(), p[1], EXIT, ...(/^IP-|^GEOIP/i.test(p[0]) ? ["no-resolve"] : [])].join(",");
+      (/^PROCESS-NAME$/i.test(p[0]) ? android : common).push(r);
+    } else if (/^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(line)) {
+      common.push(`DOMAIN-SUFFIX,${line.toLowerCase()},${EXIT}`);
+    } else {
+      bad.push(line);
+    }
+  }
+  const uniq = (a) => [...new Set(a)];
+  return { common: uniq(common), android: uniq(android), ipv6: uniq(ipv6), bad };
+}
+
+function buildClash(v, sel, isDesktop) {
+  const allRules = isDesktop ? [...sel.common] : [...sel.common, ...sel.android];
+  const rulesBlock = "const DEFAULT_RULES = [\n" + allRules.map((r) => "  " + yq(r) + ",").join("\n") + "\n];";
+  let out = CLASH_TPL
+    .replace('type: "http",', `type: ${yq(v.proto)},`)
+    .replace('server: "<HOST>",', `server: ${yq(v.host)},`)
+    .replace('port: 0,', `port: ${v.port},`)
+    .replace('username: "<USERNAME>",', `username: ${yq(v.user)},`)
+    .replace('password: "<PASSWORD>",', `password: ${yq(v.pass)},`)
+    .replace('udp: true,', `udp: ${v.udp},`)
+    .replace('forceRelay: "",', `forceRelay: ${yq(v.relay)},`)
+    .replace('blockAnthropicIpv6: true,', `blockAnthropicIpv6: ${v.blockIpv6},`)
+    .replace(/const DEFAULT_RULES = \[[\s\S]*?\];/, rulesBlock);
+  if (isDesktop) {
+    out = out
+      .replace("const main = (config) => {", "function main(config, profileName) {")
+      .replace(/\n};\s*$/, "\n}\n");
+  }
+  return out;
+}
+
+function buildSingbox(v, sel) {
+  const EXIT = RULES_DATA.exitName;
+  const outbound = {
+    type: v.proto === "socks5" ? "socks" : "http",
+    tag: EXIT,
+    server: v.host,
+    server_port: v.port,
+    username: v.user,
+    password: v.pass,
+  };
+  if (v.relay && v.relay !== "DIRECT") outbound.detour = v.relay;
+  const domain_suffix = [], domain_keyword = [], ip_cidr = [];
+  for (const r of sel.common) {
+    const [t, val] = r.split(",");
+    if (t === "DOMAIN-SUFFIX" || t === "DOMAIN") domain_suffix.push(val);
+    else if (t === "DOMAIN-KEYWORD") domain_keyword.push(val);
+    else if (t === "IP-CIDR") ip_cidr.push(val);
+  }
+  const rules = [];
+  if (sel.ipv6.length) {
+    rules.push({ ip_cidr: sel.ipv6.map((r) => r.split(",")[1]), action: "reject" });
+  }
+  const routeRule = { outbound: EXIT };
+  if (domain_suffix.length) routeRule.domain_suffix = domain_suffix;
+  if (domain_keyword.length) routeRule.domain_keyword = domain_keyword;
+  if (ip_cidr.length) routeRule.ip_cidr = ip_cidr;
+  rules.push(routeRule);
+  return JSON.stringify({ outbounds: [outbound], route: { rules } }, null, 2);
+}
+
+function setStatus(kind, html) {
+  $("parsed").className = "parsed " + kind;
+  $("status").innerHTML = html;
+}
+
+function render() {
+  if (!RULES_DATA) return;
+  const onGroups = RULES_DATA.groups.filter((g) => document.querySelector(`[data-g="${g.id}"]`)?.checked);
+  $("selSummary").innerHTML = onGroups.map((g) => `<span class="chip">${g.name}</span>`).join("") || '<span class="chip" style="color:var(--err);background:var(--err-soft)">未选择分组</span>';
+
+  const v = readForm();
+  const sel = collectSelection();
+  if (!v) {
+    setStatus("warn", "请填写完整的住宅代理地址、有效端口（1~65535）、用户名和密码。");
+  } else if (sel.bad.length) {
+    setStatus("warn", `代理信息有效，但有 ${sel.bad.length} 条自定义规则格式无法识别：<code>${sel.bad[0]}</code>`);
+  } else {
+    setStatus("ok", `配置就绪：<code>${v.proto.toUpperCase()}</code> · <code>${v.host}:${v.port}</code> · 共 ${sel.ipv6.length + sel.common.length} 条规则`);
+  }
+
+  $("st1").classList.toggle("done", !!v);
+  $("st2").classList.toggle("done", sel.common.length > 0);
+  $("st3").classList.toggle("done", !!v && copiedOnce);
+
+  $("qrSection").classList.toggle("hidden", curClient !== "shadowrocket" || !v);
+  $("subTabs").classList.toggle("hidden", curClient !== "surge_loon");
+
+  const guides = {
+    clash_party: "Clash Party：左侧「覆写」→ 新建 JavaScript 覆写 → 粘贴保存，并在订阅设置中启用该覆写。",
+    clash_verge: "Clash Verge Rev：右侧「订阅」→ 右键当前机场订阅 →「编辑扩展脚本」→ 粘贴保存即可。",
+    flclash: "FlClash（≥ 0.8.85）：「脚本」→ 新建脚本并粘贴保存，在「配置」中绑定该脚本。",
+    shadowrocket: "Shadowrocket：先扫码或复制链接添加节点，在节点设置中将「代理通过」选为你的机场分组，再导入下方模块。",
+    surge_loon: "Surge / Loon：先手动添加住宅代理节点并设置 underlying-proxy，再将下方模块/插件导入客户端。",
+    singbox: "Sing-box：将以下 outbounds 与 route.rules 片段合并到你的 config.json 中（建议在 detour 字段填入你的机场出站 tag）。",
+  };
+  $("clientGuide").textContent = guides[curClient];
+
+  if (!v) {
+    $("copyBtn").disabled = true;
+    $("downloadBtn").disabled = true;
+    $("codeOut").textContent = "请先在第一步填写完整的住宅代理信息。";
+    return;
+  }
+
+  let content = "", filename = "resigate.txt";
+  const allRuleLines = [...sel.ipv6, ...sel.common].join("\n");
+  if (curClient === "clash_party" || curClient === "clash_verge") {
+    content = buildClash(v, sel, true);
+    filename = "resigate-clash.js";
+  } else if (curClient === "flclash") {
+    content = buildClash(v, sel, false);
+    filename = "resigate-flclash.js";
+  } else if (curClient === "shadowrocket") {
+    content = `#!name=ResiGate\n#!desc=选中域名走 ${RULES_DATA.exitName} 静态住宅节点\n\n[Rule]\n${allRuleLines}\n`;
+    filename = "resigate.module";
+    const b64 = btoa(unescape(encodeURIComponent(`${v.user}:${v.pass}@${v.host}:${v.port}`)));
+    const uri = `${v.proto === "socks5" ? "socks" : "http"}://${b64}?remarks=${encodeURIComponent(RULES_DATA.exitName)}`;
+    $("qrcode").innerHTML = "";
+    qrInstance = new QRCode($("qrcode"), { text: uri, width: 140, height: 140 });
+    $("copyUriBtn").onclick = () => copyText(uri, $("copyUriBtn"), "已复制节点链接");
+  } else if (curClient === "surge_loon") {
+    if (curSub === "surge") {
+      content = `#!name=ResiGate\n#!desc=选中域名走 ${RULES_DATA.exitName} 静态住宅节点\n#!category=ResiGate\n\n[Rule]\n${allRuleLines}\n`;
+      filename = "resigate.sgmodule";
+    } else {
+      content = `#!name = ResiGate\n#!desc = 选中域名走 ${RULES_DATA.exitName} 静态住宅节点\n\n[Rule]\n${allRuleLines}\n`;
+      filename = "resigate.plugin";
+    }
+  } else if (curClient === "singbox") {
+    content = buildSingbox(v, sel);
+    filename = "resigate-singbox.json";
+  }
+
+  $("copyBtn").disabled = false;
+  $("downloadBtn").disabled = false;
+  $("codeOut").textContent = content;
+  $("copyBtn").onclick = () => {
+    copiedOnce = true;
+    $("st3").classList.add("done");
+    copyText(content, $("copyBtn"), "✓ 已复制");
+  };
+  $("downloadBtn").onclick = () => {
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+}
+
+function copyText(text, btn, okLabel) {
+  const old = btn.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = okLabel;
+    btn.classList.add("ok");
+    setTimeout(() => { btn.textContent = old; btn.classList.remove("ok"); }, 1800);
+  });
+}
+</script>
+</body>
+</html>

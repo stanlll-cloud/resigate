@@ -1,0 +1,184 @@
+{
+  "exitName": "🏠住宅出口-勿选",
+  "relayName": "RG_Relay",
+  "relayExclude": "(?i)住宅出口|到期|过期|剩余|官网|网址|失联|故障|重置|套餐|Expire|Traffic|Reset|^(DIRECT|REJECT|COMPATIBLE|PASS)$",
+  "groups": [
+    {
+      "id": "claude",
+      "name": "Claude / Anthropic",
+      "on": true,
+      "desc": "claude.ai、anthropic.com、Claude Code、MCP 等",
+      "ipv6Block": [
+        "2607:6bc0::/48",
+        "2607:6bc0:11::/48"
+      ],
+      "rules": [
+        "S:claude.ai",
+        "S:claude.com",
+        "S:clau.de",
+        "S:anthropic.com",
+        "S:claudeusercontent.com",
+        "S:claudemcpcontent.com",
+        "S:modelcontextprotocol.io",
+        "K:anthropic",
+        "K:claude",
+        "IP-CIDR,160.79.104.0/21,@,no-resolve",
+        "IP-ASN,399358,@,no-resolve"
+      ],
+      "android": [
+        "com.anthropic.claude"
+      ]
+    },
+    {
+      "id": "openai",
+      "name": "OpenAI / ChatGPT",
+      "on": true,
+      "desc": "chatgpt.com、openai.com、auth0.com 等（含登录认证）",
+      "rules": [
+        "S:openai.com",
+        "S:chatgpt.com",
+        "S:chat.com",
+        "S:oaistatic.com",
+        "S:oaiusercontent.com",
+        "S:sora.com",
+        "S:auth0.com"
+      ],
+      "android": [
+        "com.openai.chatgpt"
+      ]
+    },
+    {
+      "id": "google_ai",
+      "name": "Google AI (Gemini / AI Studio)",
+      "on": true,
+      "desc": "仅分流 Gemini、AI Studio 与 Google 登录，不烧 Drive/Play 大流量",
+      "rules": [
+        "S:gemini.google.com",
+        "S:aistudio.google.com",
+        "S:generativelanguage.googleapis.com",
+        "S:alkalimakersuite-pa.clients6.google.com",
+        "S:accounts.google.com",
+        "S:labs.google"
+      ],
+      "android": [
+        "com.google.android.apps.bard"
+      ]
+    },
+    {
+      "id": "risk",
+      "name": "监控 / 风控 / 埋点",
+      "on": true,
+      "desc": "Sentry、Datadog、Sift、Segment、Intercom 等（网站靠它们判断 IP）",
+      "rules": [
+        "S:sentry.io",
+        "K:browser-intake",
+        "S:datadoghq.com",
+        "S:growthbook.io",
+        "S:usefathom.com",
+        "S:segment.io",
+        "S:siftscience.com",
+        "S:intercom.io",
+        "S:intercomcdn.com"
+      ]
+    },
+    {
+      "id": "captcha",
+      "name": "人机验证",
+      "on": true,
+      "desc": "hCaptcha、Cloudflare Turnstile、reCAPTCHA",
+      "rules": [
+        "S:hcaptcha.com",
+        "S:challenges.cloudflare.com",
+        "S:recaptcha.net"
+      ]
+    },
+    {
+      "id": "pay",
+      "name": "支付 / 身份认证",
+      "on": true,
+      "desc": "Stripe、PayPal、Persona 实名认证",
+      "rules": [
+        "S:stripe.com",
+        "S:stripe.network",
+        "S:stripecdn.com",
+        "S:withpersona.com",
+        "S:paypal.com",
+        "S:paypalobjects.com"
+      ]
+    },
+    {
+      "id": "ipcheck",
+      "name": "IP 检测网站",
+      "on": true,
+      "desc": "webshare.io、ipinfo.io、ip.sb（用于核对出口 IP）",
+      "rules": [
+        "S:webshare.io",
+        "S:ipinfo.io",
+        "S:ip.sb"
+      ]
+    },
+    {
+      "id": "google_all",
+      "name": "全量 Google（含 Gmail / Play）",
+      "on": false,
+      "tag": "流量较大",
+      "desc": "google.com、googleapis.com、gmail.com 等，按量计费住宅 IP 慎选",
+      "rules": [
+        "S:google.com",
+        "S:googleapis.com",
+        "S:gstatic.com",
+        "S:googleusercontent.com",
+        "S:gmail.com"
+      ],
+      "android": [
+        "com.android.vending",
+        "com.google.android.apps.walletnfcrel"
+      ]
+    },
+    {
+      "id": "x",
+      "name": "X（推特）/ Grok",
+      "on": false,
+      "desc": "x.com、twitter.com、grok.com、x.ai",
+      "rules": [
+        "S:x.com",
+        "S:twitter.com",
+        "S:twimg.com",
+        "S:grok.com",
+        "S:x.ai"
+      ],
+      "android": [
+        "com.twitter.android",
+        "ai.x.grok"
+      ]
+    },
+    {
+      "id": "github",
+      "name": "GitHub / Copilot",
+      "on": false,
+      "desc": "github.com、githubcopilot.com 等",
+      "rules": [
+        "S:github.com",
+        "S:githubusercontent.com",
+        "S:githubcopilot.com",
+        "S:githubassets.com"
+      ]
+    },
+    {
+      "id": "tiktok",
+      "name": "TikTok",
+      "on": false,
+      "desc": "tiktok.com、tiktokv.com、byteoversea.com 等",
+      "rules": [
+        "S:tiktok.com",
+        "S:tiktokv.com",
+        "S:tiktokcdn.com",
+        "S:byteoversea.com",
+        "S:musical.ly"
+      ],
+      "android": [
+        "com.zhiliaoapp.musically"
+      ]
+    }
+  ]
+}
